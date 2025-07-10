@@ -373,7 +373,20 @@ class TemplateParser:
         try:
             if not self._is_safe_expression(condition):
                 raise ValueError(f"Potentially dangerous expression: {condition}")
-            
+                
+            # Special handling for loop variables
+            if 'loop.' in condition:
+                loop_var = condition.split('loop.')[-1].strip()
+                loop_info = context.get('loop', {})
+                if loop_var == 'last':
+                    return loop_info.get('last', False), context
+                if loop_var == 'first':
+                    return loop_info.get('first', False), context
+                if loop_var == 'index':
+                    return bool(loop_info.get('index', 0)), context
+                if loop_var == 'index0':
+                    return bool(loop_info.get('index0', 0)), context
+                    
             # Create safe evaluation environment
             safe_globals = self._get_safe_globals()
             eval_globals = {**safe_globals, **self.custom_functions}
