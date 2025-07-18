@@ -121,19 +121,13 @@ class TemplateParser:
                 # Handle if condition
                 if block.startswith('if '):
                     condition = block[3:].strip()
-                    print(f"\nDEBUG - Processing if block with condition: {condition}")
-                    print(f"DEBUG - Available functions: {list(self.custom_functions.keys())}")
-                    print(f"DEBUG - Context keys: {list(context.keys())}")
                     result, updated_context = self._evaluate_condition(condition, context)
-                    print(f"DEBUG - Condition evaluation result: {result}")
-                    print(f"DEBUG - Updated context: {updated_context}")
                     # Merge all variables except special ones and functions
                     for k, v in updated_context.items():
                         if not k.startswith('__') and k not in self.custom_functions:
                             # Only update context if the key doesn't exist or was modified
                             if k not in context or context[k] != v:
                                 context[k] = v
-                                print(f"DEBUG - Updated context with: {k} = {v}")
                     # Ensure final_price is available in context if it was calculated
                     if 'final_price' in updated_context:
                         context['final_price'] = updated_context['final_price']
@@ -141,7 +135,6 @@ class TemplateParser:
                     # Find matching endif using helper method
                     endif_idx = self._skip_control_block(i, 'if', 'endif')
                     if endif_idx == len(self.compiled):
-                        # print("DEBUG - Error: No matching endif found for if block")
                         i += 1
                         continue
                     
@@ -209,10 +202,9 @@ class TemplateParser:
                             'index0': item_idx,
                             'first': item_idx == 0,
                             'last': item_idx == total_items - 1,
-                            'length': total_items
+                            'length': total_items,
+                            'parentloop': context.get('loop')  # Save parent loop context
                         }
-                        print(f"DEBUG - Loop vars: {loop_context['loop']}")  # 调试循环变量
-                        print(f"DEBUG - not loop.last: {not (item_idx == total_items - 1)}")  # 调试条件判断
                         
                         # Render loop content with current item
                         item_output = []
@@ -525,7 +517,7 @@ class TemplateParser:
             prev_line_empty = not stripped
             
         # Ensure exactly one newline at end
-        return '\n'.join(cleaned).strip() + '\n'
+        return '\n'.join(cleaned).strip() 
         
     def _parse_for_block(self, block: str) -> tuple:
         """Parse a for block into loop variable and iterable parts."""

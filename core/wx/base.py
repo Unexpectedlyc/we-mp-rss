@@ -7,14 +7,27 @@ from core.models.feed import Feed
 from .cfg import cfg,wx_cfg
 from core.print import print_error,print_info
 from core.rss import RSS
+from driver.success import WX_LOGIN_ED,WX_LOGIN_INFO
 # 定义基类
 class WxGather:
     articles=[]
+    aids=[]
     def all_count(self):
         if getattr(self, 'articles', None) is not None:
             return len(self.articles)
         return 0
+    def RecordAid(self,aid:str):
+        self.aids.append(aid)
+        pass
+    def HasGathered(self,aid:str):
+        if aid in self.aids:
+            return True
+        self.RecordAid(aid)
+        return False
     def Model(self):
+        if cfg.get("gather.model","web")=="app":
+            from core.wx import MpsAppMsg
+            wx=MpsWeb()
         if cfg.get("gather.model","web")=="web":
             from core.wx import MpsWeb
             wx=MpsWeb()
@@ -45,6 +58,7 @@ class WxGather:
     def FillBack(self,CallBack=None,data=None,Ext_Data=None):
         if CallBack is not None:
             if data is not  None:
+                WX_LOGIN_ED=True
                 from core.models import Article
                 from datetime import datetime
                 art={
@@ -60,7 +74,7 @@ class WxGather:
                     art['description']=data['digest']
                 if CallBack(art):
                     art["ext"]=Ext_Data
-                    art.pop("content")
+                    # art.pop("content")
                     self.articles.append(art)
 
 
@@ -129,7 +143,8 @@ class WxGather:
         _cookies=[{'name': c.name, 'value': c.value, 'domain': c.domain,'expiry':c.expires,'expires':c.expires} for c in self._cookies]
         _cookies.append({'name':'token','value':self.token})
         if len(_cookies) > 0:   
-            DoSuccess(_cookies)
+            # DoSuccess(_cookies)
+            pass
         if CallBack is not None:
             CallBack(item)
         pass
@@ -137,6 +152,7 @@ class WxGather:
         self.Over()
         if code=="Invalid Session":
             from jobs.notice import send_wx_code
+            WX_LOGIN_ED=False
             send_wx_code(f"公众号平台登录失效,请重新登录")
             pass
         raise Exception(error)
